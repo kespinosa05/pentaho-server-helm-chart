@@ -1,0 +1,31 @@
+# Default values for publix-app.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: pentaho-server-ce
+
+name: Pentaho server CE
+
+timezone: America/Guayaquil
+
+pentahoImage:
+  repository: kespinosa05/pentaho-server-ce
+  tag: 9.0.0.0-423-alpine3113
+  pullPolicy: Always
+
+postgresImage:
+  repository: postgres
+  tag: 10
+  pullPolicy: IfNotPresent
+
+postgresql:
+  image:
+    repository: postgres
+    tag: 10
+    pullPolicy: IfNotPresent
+  user: postgres
+  pass: postgres
+  volumeSize: 10Gi
+

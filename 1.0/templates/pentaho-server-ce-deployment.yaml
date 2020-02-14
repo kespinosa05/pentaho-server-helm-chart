@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pentaho-server-ce
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: pentaho-server-ce
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 200 
+      containers:
+        - name: pentaho-server-ce
+          image: {{ .Values.pentahoImage.repository }}:{{ .Values.pentahoImage.tag }}
+          imagePullPolicy: {{ .Values.pentahoImage.pullPolicy }}
+          ports:
+            - containerPort: 8080
+            - containerPort: 8009
+          env:
+          - name: TIMEZONE
+            value: {{ .Values.timezone }}
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi

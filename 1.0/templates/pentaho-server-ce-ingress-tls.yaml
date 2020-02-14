@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: pentaho-server-ce-tls-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: nginx    
+spec:
+  tls:
+  - hosts:
+    - pentaho.krugernetes.com
+  rules:
+    - host: pentaho.krugernetes.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: pentaho-server-ce
+            servicePort: 8080

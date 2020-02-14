@@ -1,0 +1,6 @@
+categories:
+- Transformation
+labels:
+  io.rancher.certified: experimental
+name: Pentaho server CE
+
