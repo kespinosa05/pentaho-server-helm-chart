@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config-init-script
+data:
+  create_jcr_postgresql.sql: |
+    --
+    -- note: this script assumes pg_hba.conf is configured correctly
+    --
+
+    -- \connect postgres postgres
+
+    drop database if exists jackrabbit;
+    drop user if exists jcr_user;
+
+    CREATE USER jcr_user PASSWORD 'password';
+
+    CREATE DATABASE jackrabbit WITH OWNER = jcr_user ENCODING = 'UTF8' TABLESPACE = pg_default;
+
+    GRANT ALL PRIVILEGES ON DATABASE jackrabbit to jcr_user;
+  create_quartz_postgresql.sql: "--Begin--\n-- note: this script assumes pg_hba.conf
+    is configured correctly\n--\n\n-- \\connect postgres postgres\n\ndrop database
+    if exists quartz;\ndrop user if exists pentaho_user;\n\nCREATE USER pentaho_user
+    PASSWORD 'password';\n\nCREATE DATABASE quartz  WITH OWNER = pentaho_user  ENCODING
+    = 'UTF8' TABLESPACE = pg_default;\n\nGRANT ALL ON DATABASE quartz to pentaho_user;\n\n--End--\n--Begin
+    Connect--\n\\connect quartz pentaho_user\n\nbegin;\n\ndrop table if exists qrtz5_job_listeners;\ndrop
+    table if exists qrtz5_trigger_listeners;\ndrop table if exists qrtz5_fired_triggers;\ndrop
+    table if exists qrtz5_paused_trigger_grps;\ndrop table if exists qrtz5_scheduler_state;\ndrop
+    table if exists qrtz5_locks;\ndrop table if exists qrtz5_simple_triggers;\ndrop
+    table if exists qrtz5_cron_triggers;\ndrop table if exists qrtz5_blob_triggers;\ndrop
+    table if exists qrtz5_triggers;\ndrop table if exists qrtz5_job_details;\ndrop
+    table if exists qrtz5_calendars;\n\nCREATE TABLE qrtz5_job_details\n  (\n    JOB_NAME
+    \ VARCHAR(200) NOT NULL,\n    JOB_GROUP VARCHAR(200) NOT NULL,\n    DESCRIPTION
+    VARCHAR(250) NULL,\n    JOB_CLASS_NAME   VARCHAR(250) NOT NULL, \n    IS_DURABLE
+    BOOL NOT NULL,\n    IS_VOLATILE BOOL NOT NULL,\n    IS_STATEFUL BOOL NOT NULL,\n
+    \   REQUESTS_RECOVERY BOOL NOT NULL,\n    JOB_DATA BYTEA NULL,\n    PRIMARY KEY
+    (JOB_NAME,JOB_GROUP)\n);\n\nCREATE TABLE qrtz5_job_listeners\n  (\n    JOB_NAME
+    \ VARCHAR(200) NOT NULL, \n    JOB_GROUP VARCHAR(200) NOT NULL,\n    JOB_LISTENER
+    VARCHAR(200) NOT NULL,\n    PRIMARY KEY (JOB_NAME,JOB_GROUP,JOB_LISTENER),\n    FOREIGN
+    KEY (JOB_NAME,JOB_GROUP) \n\tREFERENCES qrtz5_JOB_DETAILS(JOB_NAME,JOB_GROUP)
+    \n);\n\nCREATE TABLE qrtz5_triggers\n  (\n    TRIGGER_NAME VARCHAR(200) NOT NULL,\n
+    \   TRIGGER_GROUP VARCHAR(200) NOT NULL,\n    JOB_NAME  VARCHAR(200) NOT NULL,
+    \n    JOB_GROUP VARCHAR(200) NOT NULL,\n    IS_VOLATILE BOOL NOT NULL,\n    DESCRIPTION
+    VARCHAR(250) NULL,\n    NEXT_FIRE_TIME BIGINT NULL,\n    PREV_FIRE_TIME BIGINT
+    NULL,\n    PRIORITY INTEGER NULL,\n    TRIGGER_STATE VARCHAR(16) NOT NULL,\n    TRIGGER_TYPE
+    VARCHAR(8) NOT NULL,\n    START_TIME BIGINT NOT NULL,\n    END_TIME BIGINT NULL,\n
+    \   CALENDAR_NAME VARCHAR(200) NULL,\n    MISFIRE_INSTR SMALLINT NULL,\n    JOB_DATA
+    BYTEA NULL,\n    PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),\n    FOREIGN KEY (JOB_NAME,JOB_GROUP)
+    \n\tREFERENCES qrtz5_JOB_DETAILS(JOB_NAME,JOB_GROUP) \n);\n\nCREATE TABLE qrtz5_simple_triggers\n
+    \ (\n    TRIGGER_NAME VARCHAR(200) NOT NULL,\n    TRIGGER_GROUP VARCHAR(200) NOT
+    NULL,\n    REPEAT_COUNT BIGINT NOT NULL,\n    REPEAT_INTERVAL BIGINT NOT NULL,\n
+    \   TIMES_TRIGGERED BIGINT NOT NULL,\n    PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),\n
+    \   FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP) \n\tREFERENCES qrtz5_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP)\n);\n\nCREATE
+    TABLE qrtz5_cron_triggers\n  (\n    TRIGGER_NAME VARCHAR(200) NOT NULL,\n    TRIGGER_GROUP
+    VARCHAR(200) NOT NULL,\n    CRON_EXPRESSION VARCHAR(120) NOT NULL,\n    TIME_ZONE_ID
+    VARCHAR(80),\n    PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),\n    FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP)
+    \n\tREFERENCES qrtz5_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP)\n);\n\nCREATE TABLE
+    qrtz5_blob_triggers\n  (\n    TRIGGER_NAME VARCHAR(200) NOT NULL,\n    TRIGGER_GROUP
+    VARCHAR(200) NOT NULL,\n    BLOB_DATA BYTEA NULL,\n    PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),\n
+    \   FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP) \n        REFERENCES qrtz5_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP)\n);\n\nCREATE
+    TABLE qrtz5_trigger_listeners\n  (\n    TRIGGER_NAME  VARCHAR(200) NOT NULL, \n
+    \   TRIGGER_GROUP VARCHAR(200) NOT NULL,\n    TRIGGER_LISTENER VARCHAR(200) NOT
+    NULL,\n    PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP,TRIGGER_LISTENER),\n    FOREIGN
+    KEY (TRIGGER_NAME,TRIGGER_GROUP) \n\tREFERENCES qrtz5_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP)\n);\n\n\nCREATE
+    TABLE qrtz5_calendars\n  (\n    CALENDAR_NAME  VARCHAR(200) NOT NULL, \n    CALENDAR
+    BYTEA NOT NULL,\n    PRIMARY KEY (CALENDAR_NAME)\n);\n\n\nCREATE TABLE qrtz5_paused_trigger_grps\n
+    \ (\n    TRIGGER_GROUP  VARCHAR(200) NOT NULL, \n    PRIMARY KEY (TRIGGER_GROUP)\n);\n\nCREATE
+    TABLE qrtz5_fired_triggers \n  (\n    ENTRY_ID VARCHAR(95) NOT NULL,\n    TRIGGER_NAME
+    VARCHAR(200) NOT NULL,\n    TRIGGER_GROUP VARCHAR(200) NOT NULL,\n    IS_VOLATILE
+    BOOL NOT NULL,\n    INSTANCE_NAME VARCHAR(200) NOT NULL,\n    FIRED_TIME BIGINT
+    NOT NULL,\n    PRIORITY INTEGER NOT NULL,\n    STATE VARCHAR(16) NOT NULL,\n    JOB_NAME
+    VARCHAR(200) NULL,\n    JOB_GROUP VARCHAR(200) NULL,\n    IS_STATEFUL BOOL NULL,\n
+    \   REQUESTS_RECOVERY BOOL NULL,\n    PRIMARY KEY (ENTRY_ID)\n);\n\nCREATE TABLE
+    qrtz5_scheduler_state \n  (\n    INSTANCE_NAME VARCHAR(200) NOT NULL,\n    LAST_CHECKIN_TIME
+    BIGINT NOT NULL,\n    CHECKIN_INTERVAL BIGINT NOT NULL,\n    PRIMARY KEY (INSTANCE_NAME)\n);\n\nCREATE
+    TABLE qrtz5_locks\n  (\n    LOCK_NAME  VARCHAR(40) NOT NULL, \n    PRIMARY KEY
+    (LOCK_NAME)\n);\n\nINSERT INTO qrtz5_locks values('TRIGGER_ACCESS');\nINSERT INTO
+    qrtz5_locks values('JOB_ACCESS');\nINSERT INTO qrtz5_locks values('CALENDAR_ACCESS');\nINSERT
+    INTO qrtz5_locks values('STATE_ACCESS');\nINSERT INTO qrtz5_locks values('MISFIRE_ACCESS');\n\nALTER
+    TABLE qrtz5_job_listeners OWNER TO pentaho_user;\nALTER TABLE qrtz5_trigger_listeners
+    OWNER TO pentaho_user;\nALTER TABLE qrtz5_fired_triggers OWNER TO pentaho_user;\nALTER
+    TABLE qrtz5_paused_trigger_grps OWNER TO pentaho_user;\nALTER TABLE qrtz5_scheduler_state
+    OWNER TO pentaho_user;\nALTER TABLE qrtz5_locks OWNER TO pentaho_user;\nALTER
+    TABLE qrtz5_simple_triggers OWNER TO pentaho_user;\nALTER TABLE qrtz5_cron_triggers
+    OWNER TO pentaho_user;\nALTER TABLE qrtz5_blob_triggers OWNER TO pentaho_user;\nALTER
+    TABLE qrtz5_triggers OWNER TO pentaho_user;\nALTER TABLE qrtz5_job_details OWNER
+    TO pentaho_user;\nALTER TABLE qrtz5_calendars OWNER TO pentaho_user;\n\ncommit;\n--End
+    Connect--"
+  create_repository_postgresql.sql: |
+    --
+    -- note: this script assumes pg_hba.conf is configured correctly
+    --
+
+    -- \connect postgres postgres
+
+    drop database if exists hibernate;
+    drop user if exists hibuser;
+
+    CREATE USER hibuser PASSWORD 'password';
+
+    CREATE DATABASE hibernate WITH OWNER = hibuser ENCODING = 'UTF8' TABLESPACE = pg_default;
+
+    GRANT ALL PRIVILEGES ON DATABASE hibernate to hibuser;
